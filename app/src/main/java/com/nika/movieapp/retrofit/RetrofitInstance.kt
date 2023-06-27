@@ -14,7 +14,7 @@ object RetrofitInstance {
             .create(MovieApi::class.java)
     }
 
-    val apiSearch by lazy{
+    val apiSearch: MovieApi by lazy{
         Retrofit.Builder()
             .baseUrl("https://api.themoviedb.org/3/search/")
             .addConverterFactory(GsonConverterFactory.create())

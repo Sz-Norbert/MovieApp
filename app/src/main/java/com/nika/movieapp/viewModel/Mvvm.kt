@@ -10,130 +10,39 @@ import com.nika.movieapp.fragment.HomeFragment
 import com.nika.movieapp.pojo.MovieResponse
 import com.nika.movieapp.pojo.Movie
 import com.nika.movieapp.retrofit.RetrofitInstance
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class Mvvm(
-   val movieDataBase: MovieDataBase
-):ViewModel() {
+class Mvvm(val movieDataBase: MovieDataBase):ViewModel() {
 
-    private var upcomeingLiveData:MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-    private var nowPlayingLiveData:MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-    private var popularMovieLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-    private var topRatedMoveLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-    private  var favoritesLiveData:LiveData<List<Movie>> = movieDataBase.movieDao().getAllMovies()
-    private var searchMoveLiveData=MutableLiveData<List<Movie>>()
+   var upcomeingLiveData  : MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
+     val nowPlayingLiveData:MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
+     val popularMovieLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
+     val topRatedMoveLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
+     var favoritesLiveData:LiveData<List<Movie>> = movieDataBase.movieDao().getAllMovies()
+     var searchMoveLiveData=MutableLiveData<List<Movie>>()
 
-    fun getUpcomeing(){
-        RetrofitInstance.api.getUpcomingMovies(HomeFragment.API_KEY).enqueue(object :
-            Callback<MovieResponse?> {
-            override fun onResponse(
-                call: Call<MovieResponse?>,
-                response: Response<MovieResponse?>
-            ) {
-                if (response.body()!=null){
+    fun  executeCall(){
+        val apiKey= HomeFragment.API_KEY
+       viewModelScope.launch {
+           val getUpcommeing= RetrofitInstance.api.getAll("upcoming")
+           upcomeingLiveData.value = getUpcommeing.movies
 
-                    val movieList : List<Movie> = response.body()?.movies ?: emptyList()
-                    upcomeingLiveData.value=movieList
+           val getNowPlaying=  RetrofitInstance.api.getAll("now_playing")
+           nowPlayingLiveData.value = getNowPlaying.movies
 
+           val getPopularMovie=RetrofitInstance.api.getAll("popular")
+           popularMovieLiveData.value = getPopularMovie.movies
 
-
-
-                }else{
-                    return
-                }
-            }
-
-            override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                Log.d("HOME FRAGMENT" , t.message.toString())
-            }
-        })
+           val getTopRated=RetrofitInstance.api.getAll("top_rated")
+           topRatedMoveLiveData.value = getTopRated.movies
+        }
     }
 
-    fun observeUpcomeingMoveLiveData():LiveData<List<Movie>>{
-        return upcomeingLiveData
-    }
-
-
-    fun getNowPlayingMovie(){
-        RetrofitInstance.api.getNowPlayingMovie(HomeFragment.API_KEY).enqueue(object : Callback<MovieResponse?> {
-            override fun onResponse(
-                call: Call<MovieResponse?>,
-                response: Response<MovieResponse?>
-            ) {
-
-                if (response.body()!=null){
-                    val nowPlaying:List<Movie> =response.body()?.movies ?: emptyList()
-                    nowPlayingLiveData.value=nowPlaying
-                }
-
-            }
-
-            override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                Log.d("HOME FRAGMENT" , t.message.toString())            }
-        })
-    }
-
-
-    fun observeNowPlayingMovieLiveData():LiveData<List<Movie>>{
-        return nowPlayingLiveData
-    }
-
-    fun  getPopularMovie(){
-        RetrofitInstance.api.getPopularMovie(HomeFragment.API_KEY).enqueue(object :
-            Callback<MovieResponse?> {
-            override fun onResponse(
-                call: Call<MovieResponse?>,
-                response: Response<MovieResponse?>
-            ) {
-
-                if (response.body() !=null){
-
-                    var popularMovies=response.body()?.movies ?: emptyList()
-                    popularMovieLiveData.value=popularMovies
-                }
-
-            }
-
-            override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                Log.d("HOME FRAGMENT" , t.message.toString())
-            }
-
-        })
-
-    }
-
-    fun observePopularMovie():LiveData<List<Movie>>{
-        return popularMovieLiveData
-    }
-
-
-    fun getTopRatedMoveis(){
-        RetrofitInstance.api.getTopRatedMovies(HomeFragment.API_KEY).enqueue(object : Callback<MovieResponse?> {
-            override fun onResponse(
-                call: Call<MovieResponse?>,
-                response: Response<MovieResponse?>
-            ) {
-
-                if (response.body() != null){
-
-                    var topRatedMovies=response.body()?.movies ?: emptyList()
-                    topRatedMoveLiveData.value=topRatedMovies
-                }
-            }
-
-            override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                Log.d("HOME FRAGMENT" , t.message.toString())
-            }
-        })
-    }
-
-    fun observeTopRatedMoviesLiveData():LiveData<List<Movie>>{
-        return topRatedMoveLiveData
-    }
 
     fun insertMovie(movie: Movie){
 
@@ -144,19 +53,11 @@ class Mvvm(
             movieDataBase.movieDao().upsertMovie(movie)
         }
     }
-
     fun deletMovie(movie: Movie){
         viewModelScope.launch {
             movieDataBase.movieDao().deleteMovie(movie)
         }
-
-
     }
-
-     fun observeFavorties():LiveData<List<Movie>>{
-        return favoritesLiveData
-    }
-
     fun searchMove(search: String) {
         RetrofitInstance.apiSearch.searchMovie(HomeFragment.API_KEY, search)
             .enqueue(object : Callback<MovieResponse?> {
@@ -175,15 +76,11 @@ class Mvvm(
                 }
             })
     }
-
     fun observeSearchedMovieLivedata():LiveData<List<Movie>>{
         return searchMoveLiveData
     }
 
-    fun deleteMovie(movie: Movie){
-        viewModelScope.launch {
-            movieDataBase.movieDao().deleteMovie(movie)
-        }
+    fun observeFavorties():LiveData<List<Movie>> {
+        return favoritesLiveData
     }
-
      }

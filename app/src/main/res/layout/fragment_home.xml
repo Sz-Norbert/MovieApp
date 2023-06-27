@@ -133,7 +133,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_topRated"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="250dp"
                 android:layout_margin="10dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
