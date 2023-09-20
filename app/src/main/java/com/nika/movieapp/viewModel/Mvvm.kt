@@ -1,47 +1,79 @@
 package com.nika.movieapp.viewModel
 
+import android.content.ContentValues.TAG
 import android.util.Log
+import android.widget.Toast
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nika.movieapp.db.MovieDataBase
 import com.nika.movieapp.fragment.HomeFragment
+import com.nika.movieapp.other.Resource
 import com.nika.movieapp.pojo.MovieResponse
 import com.nika.movieapp.pojo.Movie
+import com.nika.movieapp.repositories.DefaultMovieRepository
 import com.nika.movieapp.retrofit.RetrofitInstance
-import kotlinx.coroutines.CoroutineScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import javax.inject.Inject
 
-class Mvvm(val movieDataBase: MovieDataBase):ViewModel() {
+@HiltViewModel
+class Mvvm @Inject constructor( val movieRepository: DefaultMovieRepository):ViewModel() {
 
-   var upcomeingLiveData  : MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val nowPlayingLiveData:MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val popularMovieLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val topRatedMoveLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     var favoritesLiveData:LiveData<List<Movie>> = movieDataBase.movieDao().getAllMovies()
+   var upComingLiveData  = MutableLiveData<List<Movie>>()
+     val nowPlayingLiveData = MutableLiveData<List<Movie>>()
+     val popularMovieLiveData = MutableLiveData<List<Movie>>()
+     val topRatedMoveLiveData = MutableLiveData<List<Movie>>()
+     var favoritesLiveData = movieRepository.observeAllMovies()
      var searchMoveLiveData=MutableLiveData<List<Movie>>()
 
-    fun  executeCall(){
-        val apiKey= HomeFragment.API_KEY
-       viewModelScope.launch {
-           val getUpcommeing= RetrofitInstance.api.getAll("upcoming")
-           upcomeingLiveData.value = getUpcommeing.movies
+    fun executeCall() {
+        viewModelScope.launch {
+            val upcomingResource = movieRepository.getUpcoming()
+            if (upcomingResource is Resource.Success) {
+                upComingLiveData.postValue(listOf(upcomingResource.data!!))
+            } else {
+                Log.i(TAG, "executeCall: Upcoming Resource failed")
+            }
 
-           val getNowPlaying=  RetrofitInstance.api.getAll("now_playing")
-           nowPlayingLiveData.value = getNowPlaying.movies
+            val nowPlayingResource = movieRepository.getNowPlaying()
+            if (nowPlayingResource is Resource.Success) {
+                nowPlayingLiveData.postValue(listOf(nowPlayingResource.data!!))
+            } else {
+                Log.i(TAG, "executeCall: Now Playing Resource failed")
+            }
 
-           val getPopularMovie=RetrofitInstance.api.getAll("popular")
-           popularMovieLiveData.value = getPopularMovie.movies
+            val topRatedResource = movieRepository.getTopRated()
+            if (topRatedResource is Resource.Success) {
+                topRatedMoveLiveData.postValue(listOf(topRatedResource.data!!))
+            } else {
+                Log.i(TAG, "executeCall: Top Rated Resource failed")
+            }
 
-           val getTopRated=RetrofitInstance.api.getAll("top_rated")
-           topRatedMoveLiveData.value = getTopRated.movies
+            val popularResource = movieRepository.getPopular()
+            if (popularResource is Resource.Success) {
+                popularMovieLiveData.postValue(listOf(popularResource.data!!))
+            } else {
+                Log.i(TAG, "executeCall: Popular Resource failed")
+            }
+
+//            val searchResource = movieRepository.searchMovie(apiKey,searchQuery)
+//            if (searchResource is Resource.Success) {
+//                searchMoveLiveData.postValue(listOf(searchResource.data!!))
+//            } else {
+//                Log.i(TAG, "executeCall: Search Resource failed")
+//            }
         }
     }
+
+
+
+
 
 
     fun insertMovie(movie: Movie){
@@ -49,33 +81,17 @@ class Mvvm(val movieDataBase: MovieDataBase):ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
 
+        movieRepository.insertMovie(movie)
 
-            movieDataBase.movieDao().upsertMovie(movie)
         }
     }
     fun deletMovie(movie: Movie){
         viewModelScope.launch {
-            movieDataBase.movieDao().deleteMovie(movie)
+
+            movieRepository.deleteMovie(movie)
         }
     }
-    fun searchMove(search: String) {
-        RetrofitInstance.apiSearch.searchMovie(HomeFragment.API_KEY, search)
-            .enqueue(object : Callback<MovieResponse?> {
-                override fun onResponse(
-                    call: Call<MovieResponse?>,
-                    response: Response<MovieResponse?>
-                ) {
-                    if (response.body() != null) {
-                        val movieList = response.body()?.movies ?: emptyList()
-                        searchMoveLiveData.value = movieList
-                    }
-                }
 
-                override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                    Log.d("HOME FRAGMENT", t.message.toString())
-                }
-            })
-    }
     fun observeSearchedMovieLivedata():LiveData<List<Movie>>{
         return searchMoveLiveData
     }
@@ -83,4 +99,8 @@ class Mvvm(val movieDataBase: MovieDataBase):ViewModel() {
     fun observeFavorties():LiveData<List<Movie>> {
         return favoritesLiveData
     }
-     }
+
+
+
+}
+

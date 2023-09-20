@@ -13,6 +13,7 @@ import com.nika.movieapp.fragment.HomeFragment
 import com.nika.movieapp.pojo.Movie
 import com.nika.movieapp.viewModel.MovieViewModelFactory
 import com.nika.movieapp.viewModel.Mvvm
+import javax.inject.Inject
 
 class DetailsActivity : AppCompatActivity() {
     lateinit var binding : ActivityDetailsBinding
@@ -22,29 +23,19 @@ class DetailsActivity : AppCompatActivity() {
     lateinit var movieImg:String
     lateinit var details:String
     lateinit var extras : Intent
-    lateinit var viewModel: Mvvm
      var movie: Movie?=null
 
+    @Inject
+    lateinit var viewModel: Mvvm
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val movieDataBase=MovieDataBase.getInstance(this)
-        val viewModelFactory=MovieViewModelFactory(movieDataBase)
-        viewModel=ViewModelProvider(this,viewModelFactory)[Mvvm::class.java]
-
-
-
-
         extras=intent
-
         if (extras != null ) {
             getMovieInfo()
         }
-
-
         onFavoriteClick()
     }
 

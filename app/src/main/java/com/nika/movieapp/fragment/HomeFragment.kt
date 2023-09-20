@@ -5,7 +5,9 @@
     import android.view.LayoutInflater
     import android.view.View
     import android.view.ViewGroup
+    import androidx.activity.viewModels
     import androidx.fragment.app.Fragment
+    import androidx.fragment.app.viewModels
     import androidx.lifecycle.Observer
     import androidx.lifecycle.ViewModelProvider
     import androidx.navigation.fragment.findNavController
@@ -21,40 +23,31 @@
     import com.nika.movieapp.pojo.Movie
     import com.nika.movieapp.viewModel.MovieViewModelFactory
     import com.nika.movieapp.viewModel.Mvvm
+    import dagger.hilt.android.AndroidEntryPoint
+    import javax.inject.Inject
 
 
+    @AndroidEntryPoint
     class HomeFragment : Fragment() {
 
         private lateinit var binding:FragmentHomeBinding
         private lateinit var upcomeingAdapter: BaseMovieAdapter
-        private lateinit var viewModel: Mvvm
         private lateinit var nowPlayingAdapter : BaseMovieAdapter
         private lateinit var popularAdapter :BaseMovieAdapter
         private lateinit var topRatedAdapter :BaseMovieAdapter
 
+
+        @Inject
+        lateinit var viewModel: Mvvm
+
         companion object {
             const val API_KEY="4e3e46ef4fdbc2713633818eb1a9b97b"
              val IMAGE_BASE="https://image.tmdb.org/t/p/w500/"
-            val Title_KEY="package com.nika.movieapp.fragment.titleKey"
-            val RELASE_KEY="package com.nika.movieapp.fragment.relaseeKey"
-            val OVERVIEW_KEY="package com.nika.movieapp.fragment.overviewKey"
-            val BACKDROP_PATH="com.nika.movieapp.fragment.backdropPath"
-            val MOVIE_ID="com.nika.movieapp.fragment.movieID"
-
             val JSON_KEY="om.nika.movieapp.fragment.jsonKey"
-
         }
 
 
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
 
-            val movieDataBase= MovieDataBase.getInstance(requireContext())
-            val viewModelFactory= MovieViewModelFactory(movieDataBase)
-            viewModel=ViewModelProvider(this,viewModelFactory)[Mvvm::class.java]
-
-
-        }
 
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -70,34 +63,17 @@
 
 
             viewModel.executeCall()
-
-
-
             prepareUpcomeingRecyclerView()
             observeUpcomeingMovie()
-
-
             prepareNowPlayingRecyclerView()
             observeNowPlayingMovie()
-
-
             preparePupularMovieRecyclerView()
             observePopularMovie()
-
-
             prepareTopRatedMoviesAdapter()
             observeTopRatedMovieLiveData()
-
-
-
-
-
-
             binding.imgSearch.setOnClickListener{
                 onSearchiconClick()
             }
-
-
 
         }
 
@@ -151,10 +127,11 @@
         }
 
         private fun observeUpcomeingMovie() {
-            viewModel.upcomeingLiveData.observe(viewLifecycleOwner) {
+            viewModel.upComingLiveData.observe(viewLifecycleOwner, Observer {
                 upcomeingAdapter.setMovieList(it)
+            })
             }
-        }
+
 
         private fun prepareUpcomeingRecyclerView() {
             upcomeingAdapter= crateBaseAdpater()

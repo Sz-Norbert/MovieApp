@@ -8,7 +8,7 @@ class MovieViewModelFactory(
     val movieDataBase: MovieDataBase
 ):ViewModelProvider.Factory {
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return Mvvm(movieDataBase) as T
-    }
+//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+//        return Mvvm(movieDataBase) as T
+//    }
 }

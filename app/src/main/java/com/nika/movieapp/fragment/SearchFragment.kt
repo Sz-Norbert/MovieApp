@@ -6,6 +6,8 @@
     import android.view.LayoutInflater
     import android.view.View
     import android.view.ViewGroup
+    import androidx.activity.viewModels
+    import androidx.fragment.app.viewModels
     import androidx.lifecycle.Observer
     import androidx.recyclerview.widget.GridLayoutManager
     import com.google.gson.Gson
@@ -25,8 +27,7 @@
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
 
-            viewModel=(activity as MainActivity).viewModel
-        }
+            val viewModel by viewModels<Mvvm>()        }
 
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -84,7 +85,7 @@
         private fun searchMovies() {
             val searchQuery=bindig.editTextSearch.text.toString()
             if (searchQuery.isNotEmpty()){
-                viewModel.searchMove(searchQuery)
+                viewModel.observeSearchedMovieLivedata()
             }
         }
 
