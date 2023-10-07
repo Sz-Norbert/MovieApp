@@ -1,4 +1,4 @@
-package com.nika.movieapp.fragment
+package com.nika.movieapp.ui.fragment
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,32 +6,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
-import com.nika.movieapp.MainActivity
-import com.nika.movieapp.activity.DetailsActivity
+import com.nika.movieapp.ui.activity.DetailsActivity
 
 import com.nika.movieapp.adapters.MovieAdapter
 import com.nika.movieapp.databinding.FragmentFavoritesBinding
 import com.nika.movieapp.viewModel.Mvvm
+import dagger.hilt.android.AndroidEntryPoint
 
 
+@AndroidEntryPoint
 class FavoritesFragment : Fragment() {
 
     private lateinit var binding: FragmentFavoritesBinding
-    private lateinit var viewModel: Mvvm
     private lateinit var rvAdapter: MovieAdapter
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        viewModel = (activity as MainActivity).viewModel
-
-    }
-
+    private val viewModel: Mvvm by viewModels()
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -63,16 +58,16 @@ class FavoritesFragment : Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
-                val mealList = rvAdapter.differ.currentList
+                val movieList = rvAdapter.differ.currentList
 
-                if (mealList.isNotEmpty() && position < mealList.size) {
-                    val deletedMeal = mealList[position]
-                    viewModel.deletMovie(deletedMeal)
+                if (movieList.isNotEmpty() && position < movieList.size) {
+                    val deletedMovie = movieList[position]
+                    viewModel.deleteMovie(deletedMovie)
 
                     Snackbar.make(requireView(), "Meal deleted", Snackbar.LENGTH_LONG).setAction(
                         "Undo"
                     ) {
-                        viewModel.insertMovie(deletedMeal)
+                        viewModel.insertMovie(deletedMovie)
                     }.show()
                 }
             }
@@ -92,8 +87,9 @@ class FavoritesFragment : Fragment() {
     }
 
     private fun observeFavorites() {
-        viewModel.observeFavorties().observe(requireActivity(), Observer {
+        this.viewModel.observeFavorties().observe(requireActivity(), Observer {
             rvAdapter.differ.submitList(it)
+            rvAdapter.notifyDataSetChanged()
 
         })
     }

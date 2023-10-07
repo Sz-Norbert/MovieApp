@@ -1,61 +1,51 @@
-    package com.nika.movieapp.fragment
+    package com.nika.movieapp.ui.fragment
 
+    import android.content.Context
     import android.content.Intent
     import android.os.Bundle
     import android.view.LayoutInflater
     import android.view.View
     import android.view.ViewGroup
+    import android.widget.Toast
     import androidx.fragment.app.Fragment
-    import androidx.lifecycle.Observer
-    import androidx.lifecycle.ViewModelProvider
+    import androidx.fragment.app.viewModels
     import androidx.navigation.fragment.findNavController
     import androidx.recyclerview.widget.GridLayoutManager
     import androidx.recyclerview.widget.LinearLayoutManager
     import com.google.gson.Gson
     import com.nika.movieapp.R
-    import com.nika.movieapp.activity.DetailsActivity
+    import com.nika.movieapp.ui.activity.DetailsActivity
     import com.nika.movieapp.adapters.*
 
     import com.nika.movieapp.databinding.FragmentHomeBinding
-    import com.nika.movieapp.db.MovieDataBase
+    import com.nika.movieapp.other.Resource
     import com.nika.movieapp.pojo.Movie
-    import com.nika.movieapp.viewModel.MovieViewModelFactory
     import com.nika.movieapp.viewModel.Mvvm
+    import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
     class HomeFragment : Fragment() {
 
         private lateinit var binding:FragmentHomeBinding
         private lateinit var upcomeingAdapter: BaseMovieAdapter
-        private lateinit var viewModel: Mvvm
         private lateinit var nowPlayingAdapter : BaseMovieAdapter
         private lateinit var popularAdapter :BaseMovieAdapter
         private lateinit var topRatedAdapter :BaseMovieAdapter
 
+    private val viewModel: Mvvm by viewModels()
+
         companion object {
             const val API_KEY="4e3e46ef4fdbc2713633818eb1a9b97b"
              val IMAGE_BASE="https://image.tmdb.org/t/p/w500/"
-            val Title_KEY="package com.nika.movieapp.fragment.titleKey"
-            val RELASE_KEY="package com.nika.movieapp.fragment.relaseeKey"
-            val OVERVIEW_KEY="package com.nika.movieapp.fragment.overviewKey"
-            val BACKDROP_PATH="com.nika.movieapp.fragment.backdropPath"
-            val MOVIE_ID="com.nika.movieapp.fragment.movieID"
-
             val JSON_KEY="om.nika.movieapp.fragment.jsonKey"
 
         }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel.executeCall()
 
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-
-            val movieDataBase= MovieDataBase.getInstance(requireContext())
-            val viewModelFactory= MovieViewModelFactory(movieDataBase)
-            viewModel=ViewModelProvider(this,viewModelFactory)[Mvvm::class.java]
-
-
-        }
-
+    }
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -65,40 +55,23 @@
             return binding.root
         }
 
+
+
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
 
-            viewModel.executeCall()
-
-
-
             prepareUpcomeingRecyclerView()
             observeUpcomeingMovie()
-
-
             prepareNowPlayingRecyclerView()
             observeNowPlayingMovie()
-
-
             preparePupularMovieRecyclerView()
             observePopularMovie()
-
-
             prepareTopRatedMoviesAdapter()
             observeTopRatedMovieLiveData()
-
-
-
-
-
-
             binding.imgSearch.setOnClickListener{
                 onSearchiconClick()
             }
-
-
-
         }
 
         private fun onSearchiconClick() {
@@ -106,8 +79,13 @@
         }
 
         private fun observeTopRatedMovieLiveData() {
-            viewModel.topRatedMoveLiveData.observe(viewLifecycleOwner){
-                topRatedAdapter.setMovieList(it)
+            viewModel.topRatedMoveLiveData.observe(viewLifecycleOwner) {
+                if (it is Resource.Success){
+                    topRatedAdapter.setMovieList(it.data?.movies!!)
+                }
+                else{
+                    Toast.makeText(requireContext(), "Something went wrong" , Toast.LENGTH_SHORT).show()
+                }
             }
 
         }
@@ -122,9 +100,12 @@
         }
 
         private fun observePopularMovie() {
-           viewModel.popularMovieLiveData.observe(viewLifecycleOwner){
-               popularAdapter.setMovieList(it)
-           }
+            viewModel.popularMovieLiveData.observe(viewLifecycleOwner) {
+                if (it is Resource.Success){
+                    popularAdapter.setMovieList(it.data?.movies!!)
+                }
+                else{ return@observe}
+            }
         }
 
         private fun preparePupularMovieRecyclerView() {
@@ -144,15 +125,25 @@
         }
 
         private fun observeNowPlayingMovie() {
-            viewModel.nowPlayingLiveData.observe(viewLifecycleOwner){
-                nowPlayingAdapter.setMovieList(it)
+            viewModel.nowPlayingLiveData.observe(viewLifecycleOwner) {
+                if (it is Resource.Success){
+                    nowPlayingAdapter.setMovieList(it.data?.movies!!)
+                }
+                else{
+                    Toast.makeText(requireContext(), "Something went wrong" , Toast.LENGTH_SHORT).show()
+                }
             }
 
         }
 
         private fun observeUpcomeingMovie() {
-            viewModel.upcomeingLiveData.observe(viewLifecycleOwner) {
-                upcomeingAdapter.setMovieList(it)
+            viewModel.upComingLiveData.observe(viewLifecycleOwner) {
+                if (it is Resource.Success){
+                    upcomeingAdapter.setMovieList(it.data?.movies!!)
+                }
+                else{
+                    Toast.makeText(requireContext(), "Something went wrong" , Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
@@ -163,25 +154,19 @@
                 adapter=upcomeingAdapter
             }
         }
-        fun crateBaseAdpater():BaseMovieAdapter {
-
-            return object : BaseMovieAdapter() {
-                override fun onMovieClick(movie: Movie) {
-
-                    val intent = Intent(activity, DetailsActivity::class.java)
-                    val bundle = Bundle().apply {
-
-                        val json = Gson().toJson(movie)
-                        putString(JSON_KEY, json)
-
-
+            fun crateBaseAdpater():BaseMovieAdapter {
+                return object : BaseMovieAdapter() {
+                    override fun onMovieClick(movie: Movie) {
+                        val intent = Intent(activity, DetailsActivity::class.java)
+                        val bundle = Bundle().apply {
+                            val json = Gson().toJson(movie)
+                            putString(JSON_KEY, json)
+                        }
+                        intent.putExtras(bundle)
+                        startActivity(intent)
                     }
-                    intent.putExtras(bundle)
-                    startActivity(intent)
+
 
                 }
-
-
             }
         }
-    }

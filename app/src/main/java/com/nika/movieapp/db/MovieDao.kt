@@ -6,14 +6,12 @@ import com.nika.movieapp.pojo.Movie
 
 @Dao
 interface MovieDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertMovie(movie:Movie)
+   suspend fun insertMovie(movie: Movie)
 
     @Delete
-    suspend fun deleteMovie(movie:Movie)
+    suspend fun deleteMovie(movie: Movie)
 
     @Query("SELECT * FROM movieInformation")
-    fun getAllMovies():LiveData<List<Movie>>
-
+    fun readAllMovies():LiveData<List<Movie>>
 }

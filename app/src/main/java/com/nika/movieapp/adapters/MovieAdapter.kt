@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.nika.movieapp.databinding.ItemsBinding
-import com.nika.movieapp.fragment.HomeFragment
+import com.nika.movieapp.ui.fragment.HomeFragment
 import com.nika.movieapp.pojo.Movie
 
 class MovieAdapter():RecyclerView.Adapter<MovieAdapter.FavortiesViewHolder>() {
@@ -24,7 +24,6 @@ class MovieAdapter():RecyclerView.Adapter<MovieAdapter.FavortiesViewHolder>() {
 
         override fun areContentsTheSame(oldItem: Movie, newItem: Movie): Boolean {
             return oldItem==newItem
-
         }
 
     }

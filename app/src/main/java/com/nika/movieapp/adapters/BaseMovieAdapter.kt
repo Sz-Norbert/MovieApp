@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
 import com.nika.movieapp.databinding.ItemsBinding
-import com.nika.movieapp.fragment.HomeFragment
+import com.nika.movieapp.ui.fragment.HomeFragment
 import com.nika.movieapp.pojo.Movie
 
 abstract class BaseMovieAdapter() : RecyclerView.Adapter<BaseMovieViewHolder>() {
@@ -32,7 +32,6 @@ abstract class BaseMovieAdapter() : RecyclerView.Adapter<BaseMovieViewHolder>() 
         notifyDataSetChanged()
     }
 
-    @SuppressLint("SuspiciousIndentation")
     override fun onBindViewHolder(holder: BaseMovieViewHolder, position: Int) {
         val movie = items[position]
         Glide.with(holder.itemView)

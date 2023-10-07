@@ -1,86 +1,75 @@
 package com.nika.movieapp.viewModel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.nika.movieapp.db.MovieDataBase
-import com.nika.movieapp.fragment.HomeFragment
-import com.nika.movieapp.pojo.MovieResponse
+import androidx.lifecycle.*
+import com.nika.movieapp.other.Resource
 import com.nika.movieapp.pojo.Movie
-import com.nika.movieapp.retrofit.RetrofitInstance
+import com.nika.movieapp.pojo.MovieResponse
+import com.nika.movieapp.repositories.MovieRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
-class Mvvm(val movieDataBase: MovieDataBase):ViewModel() {
+import javax.inject.Inject
 
-   var upcomeingLiveData  : MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val nowPlayingLiveData:MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val popularMovieLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     val topRatedMoveLiveData: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-     var favoritesLiveData:LiveData<List<Movie>> = movieDataBase.movieDao().getAllMovies()
-     var searchMoveLiveData=MutableLiveData<List<Movie>>()
+@HiltViewModel
+class Mvvm @Inject constructor(val movieRepository: MovieRepository) : ViewModel() {
 
-    fun  executeCall(){
-        val apiKey= HomeFragment.API_KEY
-       viewModelScope.launch {
-           val getUpcommeing= RetrofitInstance.api.getAll("upcoming")
-           upcomeingLiveData.value = getUpcommeing.movies
 
-           val getNowPlaying=  RetrofitInstance.api.getAll("now_playing")
-           nowPlayingLiveData.value = getNowPlaying.movies
+    private val _upcomingLiveData = MutableLiveData<Resource<MovieResponse>>()
+    var upComingLiveData: LiveData<Resource<MovieResponse>> = _upcomingLiveData
 
-           val getPopularMovie=RetrofitInstance.api.getAll("popular")
-           popularMovieLiveData.value = getPopularMovie.movies
+    private val _nowPlayingLiveData = MutableLiveData<Resource<MovieResponse>>()
+    val nowPlayingLiveData: LiveData<Resource<MovieResponse>> = _nowPlayingLiveData
 
-           val getTopRated=RetrofitInstance.api.getAll("top_rated")
-           topRatedMoveLiveData.value = getTopRated.movies
+    private var _popularLiveData = MutableLiveData<Resource<MovieResponse>>()
+    val popularMovieLiveData: LiveData<Resource<MovieResponse>> = _popularLiveData
+
+    private var _topRatedLiveData = MutableLiveData<Resource<MovieResponse>>()
+    val topRatedMoveLiveData: LiveData<Resource<MovieResponse>> = _topRatedLiveData
+
+
+    val searchMoveLiveData = MutableLiveData<Resource<MovieResponse>>()
+    val favoritesLidata = movieRepository.observeAllMovies()
+
+    fun executeCall() = viewModelScope.launch {
+
+        val upcomingResource = movieRepository.getUpcoming()
+        _upcomingLiveData.value = upcomingResource
+//
+        val popularResponse = movieRepository.getPopular()
+        _popularLiveData.value = popularResponse
+
+        val topRatedResponse = movieRepository.getTopRated()
+        _topRatedLiveData.value = topRatedResponse
+        val nowPlayingResponse = movieRepository.getNowPlaying()
+        _nowPlayingLiveData.value = nowPlayingResponse
+    }
+
+    fun getSearchMovie(searchQuery: String) = viewModelScope.launch {
+        val searchMovieRep = movieRepository.searchMovie(searchQuery)
+        searchMoveLiveData.postValue(searchMovieRep)
+
+    }
+
+
+    fun insertMovie(movie: Movie) {
+        Log.d("////", "abcd : ${ viewModelScope.isActive} ")
+
+        CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
+            Log.d("////", "abcd : $movie ")
+            movieRepository.insertMovie(movie)
         }
     }
 
-
-    fun insertMovie(movie: Movie){
-
-
-        viewModelScope.launch(Dispatchers.IO) {
-
-
-            movieDataBase.movieDao().upsertMovie(movie)
-        }
-    }
-    fun deletMovie(movie: Movie){
-        viewModelScope.launch {
-            movieDataBase.movieDao().deleteMovie(movie)
-        }
-    }
-    fun searchMove(search: String) {
-        RetrofitInstance.apiSearch.searchMovie(HomeFragment.API_KEY, search)
-            .enqueue(object : Callback<MovieResponse?> {
-                override fun onResponse(
-                    call: Call<MovieResponse?>,
-                    response: Response<MovieResponse?>
-                ) {
-                    if (response.body() != null) {
-                        val movieList = response.body()?.movies ?: emptyList()
-                        searchMoveLiveData.value = movieList
-                    }
-                }
-
-                override fun onFailure(call: Call<MovieResponse?>, t: Throwable) {
-                    Log.d("HOME FRAGMENT", t.message.toString())
-                }
-            })
-    }
-    fun observeSearchedMovieLivedata():LiveData<List<Movie>>{
-        return searchMoveLiveData
+    fun deleteMovie(movie: Movie) = viewModelScope.launch(Dispatchers.IO) {
+        movieRepository.deleteMovie(movie)
     }
 
-    fun observeFavorties():LiveData<List<Movie>> {
-        return favoritesLiveData
+    fun observeFavorties(): LiveData<List<Movie>> {
+
+        return favoritesLidata
     }
-     }
+}
